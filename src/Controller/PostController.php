@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Comment;
 use App\Entity\Post;
+use App\Form\CommentFormType;
 use App\Form\PostType;
 use App\Repository\PostRepository;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -54,11 +56,31 @@ class PostController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'post_show', methods: ['GET'])]
-    public function show(Post $post): Response
+    #[Route('/{id}', name: 'post_show', methods: ['GET', 'POST'])]
+    public function show(Post $post, Request $request): Response
     {
+        $comments = $post->getComments();
+
+        $comment = new Comment();
+        $form = $this->createForm(CommentFormType::class, $comment)->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user = $this->security->getUser();
+            $comment->setAuthor($user);
+
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($comment);
+            $post->addComment($comment);
+
+            $entityManager->flush();
+
+            return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
+        }
+
         return $this->render('post/show.html.twig', [
             'post' => $post,
+            'comments' => $comments,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -109,5 +131,11 @@ class PostController extends AbstractController
             'error' => 401,
             'message' => 'Unauthorized access',
         ]);
+    }
+
+    #[IsGranted('ROLE_USER', statusCode: 401, message: 'You have to be logged-in to access this ressource')]
+    #[Route('/like/{id}', name: 'post_like', methods: ['POST'])]
+    public function like(Post $post)
+    {
     }
 }
