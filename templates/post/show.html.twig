@@ -46,11 +46,22 @@
         No one liked this post yet. Be the first one to like it !
     {% endfor %}
     </p>
-    <a href="{{path("post_like", {'id':post.id})}}">
-        <button class="btn btn-primary">Like this post</button>
-    </a>
 
-    <a href="{{ path('post_index') }}">back to list</a>
+    {% if app.user in post.likes %}
+        <a href="{{path("post_like", {'id':post.id})}}" class="btn btn-danger">
+            Unlike this post
+        </a>
+        {% else %}
+        <a href="{{path("post_like", {'id':post.id})}}" class="btn btn-success">
+            Like this post
+        </a>
+    {% endif %}
+
+    <a href="{{ path('post_index') }}">
+    <button class="btn btn-secondary btn-small">
+    back to list
+    </button>
+    </a>
 
     {% if app.user is same as(post.author) %}
     <a href="{{ path('post_edit', {'id': post.id}) }}">edit</a>
@@ -59,6 +70,7 @@
     {% endif %}
     <section class="container comment-section mt-4">
         <h3>Comment section <span class="badge bg-success">{{post.comments|length}}</span></h3>
+        {{form(form)}}
         {% for comment in comments %}
         <div class="comment-item border border-secondary m-1 p-1">
             <p>@{{comment.author}}</p>
@@ -66,6 +78,5 @@
             <p>{{comment.createdAt|date('d M Y à H:i')}}</p>
         </div>
         {% endfor %}
-        {{form(form)}}
     </section>
 {% endblock %}
